@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Times Table Speed Quiz</title>
+  <style>
+    :root{
+      --bg:#070a15;
+      --card: rgba(255,255,255,.06);
+      --stroke: rgba(255,255,255,.14);
+      --text:#f4f7ff;
+      --muted: rgba(244,247,255,.75);
+      --good:#2ef2a0;
+      --bad:#ff5c7a;
+      --warn:#ffd166;
+      --accent:#7c5cff;
+      --accent2:#2de2e6;
+      --shadow: 0 18px 45px rgba(0,0,0,.45);
+      --radius: 22px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      min-height:100vh;
+      display:grid;
+      place-items:center;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans", sans-serif;
+      background:
+        radial-gradient(900px 600px at 15% 15%, rgba(124,92,255,.32), transparent 58%),
+        radial-gradient(800px 600px at 85% 25%, rgba(45,226,230,.20), transparent 60%),
+        radial-gradient(800px 650px at 50% 95%, rgba(46,242,160,.14), transparent 60%),
+        var(--bg);
+      color:var(--text);
+      padding:18px;
+    }
+    .app{
+      width:min(900px, 100%);
+      display:grid;
+      gap:16px;
+    }
+    .top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .pill{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 12px;
+      border:1px solid var(--stroke);
+      background: rgba(10, 15, 35, .35);
+      border-radius:999px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+    select{
+      padding:10px 12px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(10, 15, 35, .55);
+      color:var(--text);
+      outline:none;
+      font-weight:800;
+    }
+    button{
+      padding:10px 14px;
+      border-radius:999px;
+      border:0;
+      cursor:pointer;
+      font-weight:900;
+      color:var(--text);
+      background: linear-gradient(135deg, rgba(124,92,255,.95), rgba(45,226,230,.60));
+      box-shadow: var(--shadow);
+      user-select:none;
+    }
+    button.secondary{
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow:none;
+    }
+
+    .card{
+      border:1px solid rgba(255,255,255,.12);
+      background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding:18px;
+      backdrop-filter: blur(10px);
+      overflow:hidden;
+      position:relative;
+    }
+
+    .status{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+    .stat{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 12px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(10, 15, 35, .35);
+      font-weight:900;
+    }
+    .stat small{ color: var(--muted); font-weight:800; }
+    .timer{
+      position:relative;
+      width: 220px;
+      max-width: 100%;
+      height: 12px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(10, 15, 35, .35);
+      overflow:hidden;
+    }
+    .bar{
+      height:100%;
+      width:100%;
+      background: linear-gradient(90deg, rgba(46,242,160,.95), rgba(255,209,102,.95), rgba(255,92,122,.95));
+      transform-origin:left;
+      transform: scaleX(1);
+    }
+
+    .question{
+      display:grid;
+      place-items:center;
+      text-align:center;
+      padding: 14px 10px 8px;
+    }
+    .big{
+      font-size: clamp(3.0rem, 7vw, 5.2rem);
+      font-weight: 1000;
+      letter-spacing: .5px;
+      line-height: 1.05;
+      margin: 4px 0 6px;
+      text-shadow: 0 12px 30px rgba(0,0,0,.35);
+    }
+    .hint{
+      color: var(--muted);
+      font-weight:800;
+      margin: 0 0 10px;
+    }
+
+    .answerRow{
+      display:flex;
+      justify-content:center;
+      gap:10px;
+      flex-wrap:wrap;
+      padding: 10px 0 6px;
+    }
+    input{
+      width: min(360px, 100%);
+      padding: 14px 16px;
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(10, 15, 35, .55);
+      color: var(--text);
+      outline:none;
+      font-size: 1.25rem;
+      font-weight: 900;
+      text-align:center;
+    }
+    input:focus{
+      border-color: rgba(124,92,255,.65);
+      box-shadow: 0 0 0 4px rgba(124,92,255,.18);
+    }
+
+    .feedback{
+      min-height: 2.2em;
+      text-align:center;
+      font-weight: 1000;
+      font-size: 1.1rem;
+      margin-top: 4px;
+    }
+    .good{ color: var(--good); }
+    .bad{ color: var(--bad); }
+    .warn{ color: var(--warn); }
+
+    /* Fun confetti-ish dots */
+    .sparkle{
+      position:absolute;
+      inset:-30px;
+      pointer-events:none;
+      opacity:.35;
+      background:
+        radial-gradient(circle at 10% 20%, rgba(124,92,255,.55) 0 3px, transparent 4px),
+        radial-gradient(circle at 30% 70%, rgba(45,226,230,.55) 0 3px, transparent 4px),
+        radial-gradient(circle at 80% 30%, rgba(46,242,160,.45) 0 3px, transparent 4px),
+        radial-gradient(circle at 90% 80%, rgba(255,209,102,.45) 0 3px, transparent 4px);
+      filter: blur(.2px);
+    }
+    .shake{
+      animation: shake .18s linear 0s 2;
+    }
+    @keyframes shake{
+      0%{ transform: translateX(0); }
+      25%{ transform: translateX(-6px); }
+      50%{ transform: translateX(6px); }
+      75%{ transform: translateX(-4px); }
+      100%{ transform: translateX(0); }
+    }
+    .pop{
+      animation: pop .22s ease-out;
+    }
+    @keyframes pop{
+      from{ transform: scale(.98); }
+      to{ transform: scale(1); }
+    }
+    .sr-only{
+      position:absolute; width:1px; height:1px;
+      padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app" role="application" aria-label="Times Table Speed Quiz">
+    <div class="top">
+      <div class="pill" aria-label="Choose table">
+        <span aria-hidden="true">🧮</span>
+        <label class="sr-only" for="baseSel">Table</label>
+        <select id="baseSel"></select>
+        <span style="color:var(--muted); font-weight:900;">× (1 to 12)</span>
+      </div>
+
+      <div class="pill" aria-label="Controls">
+        <button id="startBtn">Start</button>
+        <button id="restartBtn" class="secondary" type="button">Restart</button>
+      </div>
+    </div>
+
+    <div class="card" id="gameCard">
+      <div class="sparkle" aria-hidden="true"></div>
+
+      <div class="status">
+        <div class="stat"><span aria-hidden="true">✅</span> <span>Correct</span> <small id="correct">0</small></div>
+        <div class="stat"><span aria-hidden="true">🧠</span> <span>Done</span> <small id="done">0/12</small></div>
+        <div class="stat"><span aria-hidden="true">⏱️</span> <span>Time</span> <small id="timeLeft">20s</small></div>
+        <div class="timer" aria-label="Time bar">
+          <div class="bar" id="bar"></div>
+        </div>
+      </div>
+
+      <div class="question">
+        <div class="big" id="questionText">Pick a table and press Start</div>
+        <p class="hint" id="hint">You have 20 seconds for each question. Type the answer and press Enter.</p>
+
+        <div class="answerRow">
+          <label class="sr-only" for="answer">Answer</label>
+          <input id="answer" type="number" inputmode="numeric" autocomplete="off" placeholder="Type answer…" disabled />
+        </div>
+
+        <div class="feedback" id="feedback" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Minimal, fun "test only" times table quiz
+    const baseSel = document.getElementById("baseSel");
+    const startBtn = document.getElementById("startBtn");
+    const restartBtn = document.getElementById("restartBtn");
+    const questionText = document.getElementById("questionText");
+    const answerInput = document.getElementById("answer");
+    const feedback = document.getElementById("feedback");
+    const correctEl = document.getElementById("correct");
+    const doneEl = document.getElementById("done");
+    const timeLeftEl = document.getElementById("timeLeft");
+    const bar = document.getElementById("bar");
+    const gameCard = document.getElementById("gameCard");
+
+    const PER_QUESTION_SECONDS = 20;
+    const MULTIPLIERS = Array.from({length: 12}, (_, i) => i + 1);
+
+    let base = 4;
+    let order = [];
+    let idx = 0;
+    let correct = 0;
+
+    let secondsLeft = PER_QUESTION_SECONDS;
+    let tickTimer = null;     // 1s tick
+    let smoothTimer = null;   // smooth bar
+    let qStartMs = 0;
+    let running = false;
+
+    function fillTables(){
+      baseSel.innerHTML = "";
+      for (let n = 1; n <= 12; n++){
+        const opt = document.createElement("option");
+        opt.value = String(n);
+        opt.textContent = String(n);
+        if (n === base) opt.selected = true;
+        baseSel.appendChild(opt);
+      }
+    }
+
+    function shuffle(arr){
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function resetGame(){
+      stopTimers();
+      running = false;
+
+      base = Number(baseSel.value || 4);
+      order = shuffle([...MULTIPLIERS]); // random all 1..12
+      idx = 0;
+      correct = 0;
+
+      correctEl.textContent = "0";
+      doneEl.textContent = "0/12";
+      feedback.textContent = "";
+      feedback.className = "feedback";
+      secondsLeft = PER_QUESTION_SECONDS;
+      timeLeftEl.textContent = `${secondsLeft}s`;
+      bar.style.transform = "scaleX(1)";
+
+      questionText.textContent = "Press Start!";
+      answerInput.value = "";
+      answerInput.disabled = true;
+    }
+
+    function startGame(){
+      resetGame();
+      running = true;
+      answerInput.disabled = false;
+      nextQuestion();
+      answerInput.focus();
+    }
+
+    function stopTimers(){
+      if (tickTimer){ clearInterval(tickTimer); tickTimer = null; }
+      if (smoothTimer){ clearInterval(smoothTimer); smoothTimer = null; }
+    }
+
+    function startQuestionTimer(){
+      stopTimers();
+      secondsLeft = PER_QUESTION_SECONDS;
+      timeLeftEl.textContent = `${secondsLeft}s`;
+      qStartMs = Date.now();
+
+      // 1-second label update
+      tickTimer = setInterval(() => {
+        secondsLeft -= 1;
+        timeLeftEl.textContent = `${Math.max(0, secondsLeft)}s`;
+        if (secondsLeft <= 0){
+          // timeout
+          handleTimeout();
+        }
+      }, 1000);
+
+      // smooth bar update (every 50ms)
+      smoothTimer = setInterval(() => {
+        const elapsed = (Date.now() - qStartMs) / 1000;
+        const remaining = Math.max(0, PER_QUESTION_SECONDS - elapsed);
+        const frac = remaining / PER_QUESTION_SECONDS;
+        bar.style.transform = `scaleX(${frac})`;
+      }, 50);
+    }
+
+    function currentMultiplier(){
+      return order[idx];
+    }
+
+    function currentAnswer(){
+      return base * currentMultiplier();
+    }
+
+    function showQuestion(){
+      const m = currentMultiplier();
+      questionText.textContent = `${base} × ${m} = ?`;
+      questionText.classList.remove("shake");
+      questionText.classList.add("pop");
+      setTimeout(() => questionText.classList.remove("pop"), 260);
+    }
+
+    function nextQuestion(){
+      if (!running) return;
+
+      if (idx >= order.length){
+        finish();
+        return;
+      }
+
+      feedback.textContent = "";
+      feedback.className = "feedback";
+      answerInput.value = "";
+      showQuestion();
+      startQuestionTimer();
+      updateProgress();
+    }
+
+    function updateProgress(){
+      doneEl.textContent = `${idx}/12`;
+      correctEl.textContent = String(correct);
+    }
+
+    function markWrong(message){
+      feedback.textContent = message;
+      feedback.className = "feedback bad";
+      gameCard.classList.remove("pop");
+      gameCard.classList.add("shake");
+      setTimeout(() => gameCard.classList.remove("shake"), 300);
+    }
+
+    function markRight(message){
+      feedback.textContent = message;
+      feedback.className = "feedback good";
+      gameCard.classList.add("pop");
+      setTimeout(() => gameCard.classList.remove("pop"), 260);
+    }
+
+    function handleTimeout(){
+      stopTimers();
+      const m = currentMultiplier();
+      const ans = currentAnswer();
+      markWrong(`⏳ Time! ${base} × ${m} = ${ans}`);
+      idx += 1;
+      updateProgress();
+
+      // brief pause, then next
+      setTimeout(nextQuestion, 700);
+    }
+
+    function submitAnswer(){
+      if (!running) return;
+      if (idx >= order.length) return;
+
+      const raw = answerInput.value;
+      if (raw === "" || raw === null) return;
+
+      stopTimers();
+
+      const m = currentMultiplier();
+      const ans = currentAnswer();
+      const guess = Number(raw);
+
+      if (guess === ans){
+        correct += 1;
+        markRight(`🎉 Correct! ${base} × ${m} = ${ans}`);
+      } else {
+        markWrong(`❌ Nope! ${base} × ${m} = ${ans}`);
+      }
+
+      idx += 1;
+      updateProgress();
+      setTimeout(nextQuestion, 650);
+    }
+
+    function finish(){
+      stopTimers();
+      running = false;
+      answerInput.disabled = true;
+
+      const msg =
+        correct === 12 ? "🌟 PERFECT! 12/12!" :
+        correct >= 10 ? `🔥 Amazing! ${correct}/12` :
+        correct >= 7 ? `🙌 Nice! ${correct}/12` :
+        `👍 Good try! ${correct}/12`;
+
+      questionText.textContent = msg;
+      feedback.textContent = "Press Restart to go again (it will shuffle the questions).";
+      feedback.className = "feedback warn";
+      doneEl.textContent = "12/12";
+      timeLeftEl.textContent = "0s";
+      bar.style.transform = "scaleX(0)";
+    }
+
+    // Events
+    baseSel.addEventListener("change", () => {
+      if (!running) resetGame();
+    });
+
+    startBtn.addEventListener("click", startGame);
+    restartBtn.addEventListener("click", startGame);
+
+    answerInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") submitAnswer();
+    });
+
+    // Init
+    (function init(){
+      fillTables();
+      resetGame();
+    })();
+  </script>
+</body>
+</html>
