@@ -630,4 +630,343 @@
       if (isRight){
         pCorrect += 1;
         $("pFeedback").textContent = pickGoodMessage(correct);
-        $("pFeedback").className = "fee
+        $("pFeedback").className = "feedback good";
+      } else {
+        $("pFeedback").textContent = `Not quite. ${base} × ${m} = ${correct}.`;
+        $("pFeedback").className = "feedback bad";
+      }
+
+      pAwaitingNext = true;
+      $("pNext").disabled = false;
+      $("pSubmit").disabled = true;
+
+      $("pTotal").textContent = String(pIdx + 1);
+      $("pScore").textContent = String(pCorrect);
+    }
+
+    function skipPractise(){
+      if (pIdx >= pMultipliers.length) return;
+      $("pFeedback").textContent = `Skipped. ${$("pQuestion").textContent.replace(" = ?", "")} = ${base * pMultipliers[pIdx]}.`;
+      $("pFeedback").className = "feedback";
+      pAwaitingNext = true;
+      $("pNext").disabled = false;
+      $("pSubmit").disabled = true;
+      $("pTotal").textContent = String(pIdx + 1);
+    }
+
+    function goNextPractise(){
+      if (!pAwaitingNext) return;
+      pIdx += 1;
+      nextPractiseQuestion();
+    }
+
+    function finishPractise(){
+      stopPractiseTimer();
+      const total = pMultipliers.length;
+      const secs = pStartMs ? (Date.now() - pStartMs) / 1000 : 0;
+      const msg = finishMessage(pCorrect, total);
+      $("pQuestion").textContent = msg;
+      $("pFeedback").textContent = `Final score: ${pCorrect}/${total} in ${secs.toFixed(1)}s.`;
+      $("pFeedback").className = "feedback good";
+
+      $("pNext").disabled = true;
+      $("pSkip").disabled = true;
+      $("pSubmit").disabled = true;
+
+      addHistory({
+        date: nowLocalString(),
+        mode: "Practise",
+        table: base,
+        upto: maxMul,
+        score: `${pCorrect}/${total}`,
+        time: `${secs.toFixed(1)}s`
+      });
+    }
+
+    // ---------- Timed mode ----------
+    function startTimed(){
+      stopTimedTimer();
+      tCorrect = 0;
+      tTried = 0;
+      tLeft = timedSeconds;
+      tActive = true;
+
+      $("tCorrect").textContent = "0";
+      $("tTried").textContent = "0";
+      $("tLeft").textContent = `${tLeft}s`;
+      $("tFeedback").textContent = "Go go go! 🚀";
+      $("tFeedback").className = "feedback";
+
+      $("tAnswer").value = "";
+      $("tSubmit").disabled = false;
+
+      nextTimedQuestion();
+
+      tTimer = setInterval(() => {
+        tLeft -= 1;
+        $("tLeft").textContent = `${tLeft}s`;
+
+        if (tLeft <= 10){
+          $("tTimerPill").classList.add("bad");
+        } else {
+          $("tTimerPill").classList.remove("bad");
+        }
+
+        if (tLeft <= 0){
+          finishTimed();
+        }
+      }, 1000);
+
+      $("tAnswer").focus();
+    }
+
+    function stopTimedTimer(){
+      if (tTimer){ clearInterval(tTimer); tTimer = null; }
+      tActive = false;
+      $("tTimerPill").classList.remove("bad");
+    }
+
+    function nextTimedQuestion(){
+      // Choose a multiplier between 1..maxMul
+      tCurrentMultiplier = 1 + Math.floor(Math.random() * maxMul);
+      $("tQuestion").textContent = `${base} × ${tCurrentMultiplier} = ?`;
+      $("tAnswer").value = "";
+      $("tAnswer").focus();
+    }
+
+    function checkTimed(){
+      if (!tActive) return;
+
+      const raw = $("tAnswer").value;
+      if (raw === "" || raw === null){
+        $("tFeedback").textContent = "Type an answer 🙂";
+        $("tFeedback").className = "feedback";
+        $("tAnswer").focus();
+        return;
+      }
+
+      const ans = Number(raw);
+      const correct = base * tCurrentMultiplier;
+
+      tTried += 1;
+      const isRight = ans === correct;
+      if (isRight){
+        tCorrect += 1;
+        $("tFeedback").textContent = pickGoodMessage(correct);
+        $("tFeedback").className = "feedback good";
+      } else {
+        $("tFeedback").textContent = `Close! It’s ${correct}.`;
+        $("tFeedback").className = "feedback bad";
+      }
+
+      $("tCorrect").textContent = String(tCorrect);
+      $("tTried").textContent = String(tTried);
+
+      nextTimedQuestion();
+    }
+
+    function finishTimed(){
+      stopTimedTimer();
+      $("tSubmit").disabled = true;
+
+      const accuracy = tTried > 0 ? Math.round((tCorrect / tTried) * 100) : 0;
+      $("tQuestion").textContent = `Time’s up! ⏱️`;
+      $("tFeedback").textContent = `You got ${tCorrect} correct out of ${tTried} tries (${accuracy}% accuracy).`;
+      $("tFeedback").className = "feedback good";
+
+      addHistory({
+        date: nowLocalString(),
+        mode: "Timed",
+        table: base,
+        upto: maxMul,
+        score: `${tCorrect}/${tTried}`,
+        time: `${timedSeconds}s`
+      });
+    }
+
+    // ---------- Messages ----------
+    function pickGoodMessage(answer){
+      const msgs = [
+        `Yes! 🎉 (${answer})`,
+        `Awesome! ⭐ (${answer})`,
+        `Nailed it! 😄 (${answer})`,
+        `Great job! 🥳 (${answer})`,
+        `Correct! ✅ (${answer})`
+      ];
+      return msgs[Math.floor(Math.random() * msgs.length)];
+    }
+
+    function finishMessage(correct, total){
+      const pct = total > 0 ? (correct / total) : 0;
+      if (pct >= 0.95) return "Super star! 🌟";
+      if (pct >= 0.80) return "Great work! 🙌";
+      if (pct >= 0.60) return "Nice effort! Keep going 💪";
+      return "Good try — practise makes progress! 🙂";
+    }
+
+    // ---------- History ----------
+    function loadHistory(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return [];
+        return parsed;
+      }catch{
+        return [];
+      }
+    }
+
+    function saveHistory(items){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    }
+
+    function addHistory(item){
+      const items = loadHistory();
+      items.unshift(item);
+      // Keep last 20
+      while (items.length > 20) items.pop();
+      saveHistory(items);
+      renderHistory();
+    }
+
+    function renderHistory(){
+      const body = $("historyBody");
+      const items = loadHistory();
+      body.innerHTML = "";
+
+      if (items.length === 0){
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td colspan="6" class="muted">No attempts yet. Start a quiz!</td>`;
+        body.appendChild(tr);
+        return;
+      }
+
+      for (const it of items){
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${escapeHtml(it.date)}</td>
+          <td>${escapeHtml(it.mode)}</td>
+          <td>${escapeHtml(String(it.table))}×</td>
+          <td>${escapeHtml(String(it.upto))}</td>
+          <td><strong>${escapeHtml(it.score)}</strong></td>
+          <td>${escapeHtml(it.time)}</td>
+        `;
+        body.appendChild(tr);
+      }
+    }
+
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    // ---------- Start / Reset ----------
+    function applySettingsFromUI(){
+      base = Number($("baseNumber").value);
+      maxMul = Number($("maxMultiplier").value);
+      orderMode = $("orderMode").value;
+      timedSeconds = Number($("timedSeconds").value);
+
+      renderLearn();
+      // Update labels in practise/timed areas (question will show when started)
+      $("pMaxQ").textContent = String(maxMul);
+      $("tLeft").textContent = `${timedSeconds}s`;
+    }
+
+    function startCurrentMode(){
+      applySettingsFromUI();
+
+      if (mode === "learn"){
+        renderLearn();
+        return;
+      }
+      if (mode === "practise"){
+        startPractise();
+        return;
+      }
+      if (mode === "timed"){
+        startTimed();
+        return;
+      }
+    }
+
+    function resetAll(){
+      stopPractiseTimer();
+      stopTimedTimer();
+
+      $("pQuestion").textContent = "Press Start";
+      $("pFeedback").textContent = "";
+      $("pAnswer").value = "";
+      $("pNext").disabled = true;
+      $("pSkip").disabled = true;
+      $("pSubmit").disabled = false;
+      $("pScore").textContent = "0";
+      $("pTotal").textContent = "0";
+      $("pIndex").textContent = "0";
+      $("pMaxQ").textContent = "0";
+      $("pTime").textContent = "0.0s";
+
+      $("tQuestion").textContent = "Press Start";
+      $("tFeedback").textContent = "";
+      $("tAnswer").value = "";
+      $("tSubmit").disabled = false;
+      $("tCorrect").textContent = "0";
+      $("tTried").textContent = "0";
+      $("tLeft").textContent = `${timedSeconds}s`;
+
+      renderLearn();
+    }
+
+    // ---------- Event listeners ----------
+    $("tab-learn").addEventListener("click", () => setTab("learn"));
+    $("tab-practise").addEventListener("click", () => setTab("practise"));
+    $("tab-timed").addEventListener("click", () => setTab("timed"));
+
+    $("baseNumber").addEventListener("change", () => { applySettingsFromUI(); });
+    $("maxMultiplier").addEventListener("change", () => { applySettingsFromUI(); });
+    $("orderMode").addEventListener("change", () => { applySettingsFromUI(); });
+    $("timedSeconds").addEventListener("change", () => { applySettingsFromUI(); });
+
+    $("startBtn").addEventListener("click", startCurrentMode);
+    $("resetBtn").addEventListener("click", resetAll);
+
+    $("clearHistoryBtn").addEventListener("click", () => {
+      localStorage.removeItem(STORAGE_KEY);
+      renderHistory();
+    });
+
+    $("pSubmit").addEventListener("click", checkPractise);
+    $("pNext").addEventListener("click", goNextPractise);
+    $("pSkip").addEventListener("click", () => { skipPractise(); });
+
+    $("tSubmit").addEventListener("click", checkTimed);
+
+    $("pAnswer").addEventListener("keydown", (e) => {
+      if (e.key === "Enter"){
+        if (!$("pSubmit").disabled) checkPractise();
+        else if (!$("pNext").disabled) goNextPractise();
+      }
+    });
+
+    $("tAnswer").addEventListener("keydown", (e) => {
+      if (e.key === "Enter"){
+        checkTimed();
+      }
+    });
+
+    // ---------- Init ----------
+    (function init(){
+      fillSelects();
+      applySettingsFromUI();
+      renderLearn();
+      renderHistory();
+      setTab("learn");
+    })();
+  </script>
+</body>
+</html>
