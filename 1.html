@@ -1,0 +1,977 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Times Tables Trainer</title>
+  <style>
+    :root{
+      --bg:#0b1020;
+      --card:#121a33;
+      --card2:#0f1630;
+      --text:#f2f5ff;
+      --muted:#b8c0ff;
+      --accent:#7c5cff;
+      --accent2:#2de2e6;
+      --good:#3be38a;
+      --bad:#ff5c7a;
+      --warn:#ffd166;
+      --shadow: 0 18px 40px rgba(0,0,0,.35);
+      --radius: 18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans", sans-serif;
+      background:
+        radial-gradient(1200px 700px at 15% 10%, rgba(124,92,255,.35), transparent 55%),
+        radial-gradient(900px 650px at 85% 20%, rgba(45,226,230,.22), transparent 60%),
+        radial-gradient(900px 650px at 40% 95%, rgba(59,227,138,.14), transparent 60%),
+        var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      display:flex;
+      align-items:stretch;
+      justify-content:center;
+      padding:24px;
+    }
+    .app{
+      width:min(1040px, 100%);
+      display:grid;
+      grid-template-columns: 340px 1fr;
+      gap:18px;
+    }
+    @media (max-width: 920px){
+      .app{ grid-template-columns: 1fr; }
+    }
+    .panel, .main{
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    header{
+      padding:18px 18px 12px;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      background: linear-gradient(180deg, rgba(255,255,255,.05), transparent);
+    }
+    h1{
+      margin:0;
+      font-size: 1.25rem;
+      letter-spacing:.2px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    h1 .badge{
+      font-size:.8rem;
+      color: var(--muted);
+      border:1px dashed rgba(255,255,255,.22);
+      padding:4px 10px;
+      border-radius:999px;
+    }
+    .sub{
+      margin:8px 0 0;
+      color:rgba(242,245,255,.80);
+      font-size:.95rem;
+      line-height:1.35;
+    }
+    .content{ padding:16px 18px 18px; }
+    .group{ margin:14px 0 0; }
+    .label{
+      font-weight:700;
+      margin:0 0 8px;
+      color: rgba(242,245,255,.92);
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .row{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    select, input[type="number"], input[type="text"]{
+      width:100%;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(10, 15, 35, .55);
+      color: var(--text);
+      outline:none;
+      font-size:1rem;
+    }
+    select:focus, input:focus{
+      border-color: rgba(124,92,255,.6);
+      box-shadow: 0 0 0 4px rgba(124,92,255,.18);
+    }
+    .help{
+      margin:8px 0 0;
+      color: rgba(184,192,255,.92);
+      font-size:.9rem;
+    }
+    .tabs{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      padding:14px 18px 0;
+    }
+    .tab{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(10, 15, 35, .35);
+      color: rgba(242,245,255,.92);
+      padding:10px 12px;
+      border-radius:999px;
+      cursor:pointer;
+      user-select:none;
+      font-weight:700;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .tab[aria-selected="true"]{
+      background: linear-gradient(90deg, rgba(124,92,255,.28), rgba(45,226,230,.16));
+      border-color: rgba(124,92,255,.55);
+    }
+    .actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:12px;
+    }
+    button{
+      border:0;
+      border-radius:14px;
+      padding:12px 14px;
+      font-weight:800;
+      cursor:pointer;
+      color: var(--text);
+      background: linear-gradient(135deg, rgba(124,92,255,.95), rgba(45,226,230,.55));
+      box-shadow: 0 10px 20px rgba(0,0,0,.28);
+    }
+    button.secondary{
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow:none;
+    }
+    button.danger{
+      background: rgba(255,92,122,.22);
+      border:1px solid rgba(255,92,122,.35);
+      box-shadow:none;
+    }
+    button:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+    }
+
+    .main .stage{
+      padding:16px 18px 18px;
+    }
+    .card{
+      background: rgba(10, 15, 35, .35);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius: var(--radius);
+      padding:16px;
+    }
+    .statusbar{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:12px;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(10, 15, 35, .40);
+      color: rgba(242,245,255,.92);
+      font-weight:800;
+    }
+    .pill strong{ color: var(--text); }
+    .pill.good{ border-color: rgba(59,227,138,.35); }
+    .pill.bad{ border-color: rgba(255,92,122,.35); }
+    .big{
+      font-size: clamp(2rem, 3.2vw, 3rem);
+      font-weight: 900;
+      letter-spacing:.2px;
+      margin: 6px 0 10px;
+      line-height:1.1;
+    }
+    .prompt{
+      font-size:1.05rem;
+      color: rgba(242,245,255,.88);
+      margin:0 0 10px;
+    }
+    .qa{
+      display:grid;
+      grid-template-columns: 1fr 220px;
+      gap:10px;
+      align-items:end;
+    }
+    @media (max-width: 560px){
+      .qa{ grid-template-columns: 1fr; }
+    }
+    .feedback{
+      margin-top:10px;
+      font-weight:800;
+      min-height: 1.6em;
+    }
+    .feedback.good{ color: var(--good); }
+    .feedback.bad{ color: var(--bad); }
+    .tablegrid{
+      display:grid;
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      gap:10px;
+      margin-top:12px;
+    }
+    @media (max-width: 640px){
+      .tablegrid{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+    }
+    .tile{
+      padding:12px 12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(10, 15, 35, .40);
+      font-weight:900;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .tile span{ color: rgba(184,192,255,.92); font-weight:800; }
+    .attempts{
+      margin-top:16px;
+    }
+    table{
+      width:100%;
+      border-collapse: collapse;
+      overflow:hidden;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(10, 15, 35, .30);
+    }
+    th, td{
+      padding:10px 10px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      text-align:left;
+      font-size:.95rem;
+    }
+    th{
+      font-size:.85rem;
+      letter-spacing:.35px;
+      text-transform: uppercase;
+      color: rgba(184,192,255,.92);
+      background: rgba(255,255,255,.04);
+    }
+    tr:last-child td{ border-bottom:0; }
+    .muted{ color: rgba(184,192,255,.92); }
+    .tiny{ font-size:.85rem; color: rgba(184,192,255,.90); }
+    .spark{
+      display:inline-block;
+      width:10px;height:10px;border-radius:50%;
+      background: var(--accent2);
+      box-shadow: 0 0 0 4px rgba(45,226,230,.16);
+    }
+    .sr-only{
+      position:absolute; width:1px; height:1px;
+      padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app" role="application" aria-label="Times Tables Trainer">
+    <!-- LEFT PANEL -->
+    <section class="panel" aria-label="Settings">
+      <header>
+        <h1>Times Tables Trainer <span class="badge">for kids</span></h1>
+        <p class="sub">Pick a number, learn the table, then try a practice quiz or a timed challenge.</p>
+      </header>
+
+      <div class="content">
+        <div class="group">
+          <p class="label">🧮 Choose your table</p>
+          <div class="row">
+            <div>
+              <label class="sr-only" for="baseNumber">Table number</label>
+              <select id="baseNumber"></select>
+              <p class="help">Example: choose <strong>4</strong> to practise the 4× table.</p>
+            </div>
+            <div>
+              <label class="sr-only" for="maxMultiplier">Up to</label>
+              <select id="maxMultiplier"></select>
+              <p class="help">Up to <strong>12</strong> by default.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="group">
+          <p class="label">⚙️ Quiz options</p>
+          <div class="row">
+            <div>
+              <label class="sr-only" for="orderMode">Order mode</label>
+              <select id="orderMode">
+                <option value="random">Random order</option>
+                <option value="inorder">In order (1,2,3…)</option>
+              </select>
+              <p class="help">Random is great for real practice!</p>
+            </div>
+            <div>
+              <label class="sr-only" for="timedSeconds">Timed seconds</label>
+              <select id="timedSeconds">
+                <option value="30">30 seconds</option>
+                <option value="60" selected>60 seconds</option>
+                <option value="90">90 seconds</option>
+                <option value="120">120 seconds</option>
+              </select>
+              <p class="help">Only used in <strong>Timed</strong> mode.</p>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button id="startBtn">Start</button>
+            <button id="resetBtn" class="secondary" type="button">Reset</button>
+            <button id="clearHistoryBtn" class="danger" type="button">Clear history</button>
+          </div>
+
+          <p class="tiny">Tip: Type your answer and press <strong>Enter</strong>.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- MAIN -->
+    <section class="main" aria-label="Activity">
+      <div class="tabs" role="tablist" aria-label="Modes">
+        <button class="tab" id="tab-learn" role="tab" aria-selected="true" aria-controls="panel-learn">📚 Learn</button>
+        <button class="tab" id="tab-practise" role="tab" aria-selected="false" aria-controls="panel-practise">✅ Practise</button>
+        <button class="tab" id="tab-timed" role="tab" aria-selected="false" aria-controls="panel-timed">⏱️ Timed</button>
+      </div>
+
+      <div class="stage">
+        <!-- LEARN -->
+        <div class="card" id="panel-learn" role="tabpanel" aria-labelledby="tab-learn">
+          <div class="statusbar">
+            <div class="pill"><span class="spark" aria-hidden="true"></span> Table: <strong id="learnBase">4</strong>×</div>
+            <div class="pill"><span aria-hidden="true">🔢</span> Up to: <strong id="learnMax">12</strong></div>
+          </div>
+          <div class="big" id="learnTitle">Let’s learn the 4× table!</div>
+          <p class="prompt">Read these out loud. Try clapping or tapping the rhythm: “four times three is twelve!”</p>
+          <div class="tablegrid" id="tableGrid"></div>
+        </div>
+
+        <!-- PRACTISE -->
+        <div class="card" id="panel-practise" role="tabpanel" aria-labelledby="tab-practise" hidden>
+          <div class="statusbar">
+            <div class="pill"><span aria-hidden="true">✅</span> Score: <strong id="pScore">0</strong>/<strong id="pTotal">0</strong></div>
+            <div class="pill"><span aria-hidden="true">📍</span> Question: <strong id="pIndex">0</strong>/<strong id="pMaxQ">0</strong></div>
+            <div class="pill"><span aria-hidden="true">⏱️</span> Time: <strong id="pTime">0.0s</strong></div>
+          </div>
+
+          <div class="big" id="pQuestion">Press Start</div>
+
+          <div class="qa">
+            <div>
+              <label for="pAnswer" class="prompt">Your answer</label>
+              <input id="pAnswer" type="number" inputmode="numeric" autocomplete="off" placeholder="Type a number…" />
+            </div>
+            <button id="pSubmit">Check</button>
+          </div>
+
+          <div class="feedback" id="pFeedback" aria-live="polite"></div>
+
+          <div class="actions">
+            <button id="pNext" class="secondary" disabled>Next</button>
+            <button id="pSkip" class="secondary" disabled>Skip</button>
+          </div>
+        </div>
+
+        <!-- TIMED -->
+        <div class="card" id="panel-timed" role="tabpanel" aria-labelledby="tab-timed" hidden>
+          <div class="statusbar">
+            <div class="pill"><span aria-hidden="true">🎯</span> Correct: <strong id="tCorrect">0</strong></div>
+            <div class="pill"><span aria-hidden="true">🧠</span> Tried: <strong id="tTried">0</strong></div>
+            <div class="pill" id="tTimerPill"><span aria-hidden="true">⏳</span> Left: <strong id="tLeft">60s</strong></div>
+          </div>
+
+          <div class="big" id="tQuestion">Press Start</div>
+
+          <div class="qa">
+            <div>
+              <label for="tAnswer" class="prompt">Your answer</label>
+              <input id="tAnswer" type="number" inputmode="numeric" autocomplete="off" placeholder="Type a number…" />
+            </div>
+            <button id="tSubmit">Go!</button>
+          </div>
+
+          <div class="feedback" id="tFeedback" aria-live="polite"></div>
+
+          <p class="tiny">Timed mode keeps going until the timer hits zero.</p>
+        </div>
+
+        <!-- HISTORY -->
+        <div class="attempts">
+          <div class="card">
+            <div class="statusbar">
+              <div class="pill"><span aria-hidden="true">📈</span> Recent results</div>
+              <div class="pill"><span aria-hidden="true">💾</span> Saved on this device</div>
+            </div>
+            <table aria-label="Attempt history">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Mode</th>
+                  <th>Table</th>
+                  <th>Up to</th>
+                  <th>Score</th>
+                  <th>Time</th>
+                </tr>
+              </thead>
+              <tbody id="historyBody">
+                <tr><td colspan="6" class="muted">No attempts yet. Start a quiz!</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </div>
+
+  <script>
+    document.documentElement.insertAdjacentHTML(
+  "afterbegin",
+  '<div style="position:fixed;top:10px;left:10px;z-index:9999;padding:8px 10px;border-radius:10px;background:#2bff9a;color:#001;font-weight:800">JS is running ✅</div>'
+);
+
+    // ---------- Helpers ----------
+    const $ = (id) => document.getElementById(id);
+
+    function shuffle(arr){
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function nowLocalString(){
+      const d = new Date();
+      // Friendly AU-style (browser locale usually handles it)
+      return d.toLocaleString(undefined, { year:"numeric", month:"short", day:"2-digit", hour:"2-digit", minute:"2-digit" });
+    }
+
+    function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
+
+    // ---------- State ----------
+    let mode = "learn"; // learn | practise | timed
+    let base = 4;
+    let maxMul = 12;
+    let orderMode = "random";
+    let timedSeconds = 60;
+
+    // Practise state
+    let pMultipliers = [];
+    let pIdx = 0;
+    let pCorrect = 0;
+    let pStartMs = null;
+    let pTimer = null;
+    let pAwaitingNext = false;
+
+    // Timed state
+    let tCorrect = 0;
+    let tTried = 0;
+    let tLeft = 60;
+    let tTimer = null;
+    let tActive = false;
+    let tCurrentMultiplier = 1;
+
+    // History
+    const STORAGE_KEY = "times_trainer_history_v1";
+
+    // ---------- UI wiring ----------
+    function fillSelects(){
+      // base number: 1..12 (you can extend easily)
+      const baseSel = $("baseNumber");
+      baseSel.innerHTML = "";
+      for (let n = 1; n <= 12; n++){
+        const opt = document.createElement("option");
+        opt.value = String(n);
+        opt.textContent = `${n}`;
+        if (n === base) opt.selected = true;
+        baseSel.appendChild(opt);
+      }
+
+      const maxSel = $("maxMultiplier");
+      maxSel.innerHTML = "";
+      for (let n = 6; n <= 20; n++){
+        const opt = document.createElement("option");
+        opt.value = String(n);
+        opt.textContent = `${n}`;
+        if (n === maxMul) opt.selected = true;
+        maxSel.appendChild(opt);
+      }
+    }
+
+    function setTab(newMode){
+      mode = newMode;
+
+      $("tab-learn").setAttribute("aria-selected", newMode === "learn");
+      $("tab-practise").setAttribute("aria-selected", newMode === "practise");
+      $("tab-timed").setAttribute("aria-selected", newMode === "timed");
+
+      $("panel-learn").hidden = newMode !== "learn";
+      $("panel-practise").hidden = newMode !== "practise";
+      $("panel-timed").hidden = newMode !== "timed";
+
+      // Update learn panel always (nice instant feedback)
+      renderLearn();
+
+      // Reset any running timers if switching away
+      if (newMode !== "practise") stopPractiseTimer();
+      if (newMode !== "timed") stopTimedTimer();
+    }
+
+    // ---------- Learn mode ----------
+    function renderLearn(){
+      $("learnBase").textContent = base;
+      $("learnMax").textContent = maxMul;
+      $("learnTitle").textContent = `Let’s learn the ${base}× table!`;
+
+      const grid = $("tableGrid");
+      grid.innerHTML = "";
+      for (let m = 1; m <= maxMul; m++){
+        const tile = document.createElement("div");
+        tile.className = "tile";
+        const left = document.createElement("div");
+        left.innerHTML = `<strong>${base} × ${m}</strong>`;
+        const right = document.createElement("span");
+        right.textContent = `= ${base*m}`;
+        tile.appendChild(left);
+        tile.appendChild(right);
+        grid.appendChild(tile);
+      }
+    }
+
+    // ---------- Practise mode ----------
+    function startPractise(){
+      stopPractiseTimer();
+      pCorrect = 0;
+      pIdx = 0;
+      pAwaitingNext = false;
+
+      pMultipliers = [];
+      for (let m = 1; m <= maxMul; m++) pMultipliers.push(m);
+      if (orderMode === "random") shuffle(pMultipliers);
+
+      $("pTotal").textContent = "0";
+      $("pScore").textContent = "0";
+      $("pIndex").textContent = "0";
+      $("pMaxQ").textContent = String(pMultipliers.length);
+      $("pFeedback").textContent = "";
+      $("pFeedback").className = "feedback";
+      $("pAnswer").value = "";
+      $("pNext").disabled = true;
+      $("pSkip").disabled = false;
+      $("pSubmit").disabled = false;
+
+      pStartMs = Date.now();
+      pTimer = setInterval(() => {
+        const secs = (Date.now() - pStartMs) / 1000;
+        $("pTime").textContent = `${secs.toFixed(1)}s`;
+      }, 100);
+
+      nextPractiseQuestion();
+      $("pAnswer").focus();
+    }
+
+    function stopPractiseTimer(){
+      if (pTimer){ clearInterval(pTimer); pTimer = null; }
+    }
+
+    function nextPractiseQuestion(){
+      if (pIdx >= pMultipliers.length){
+        finishPractise();
+        return;
+      }
+      const m = pMultipliers[pIdx];
+      $("pQuestion").textContent = `${base} × ${m} = ?`;
+      $("pIndex").textContent = String(pIdx + 1);
+      $("pMaxQ").textContent = String(pMultipliers.length);
+      $("pTotal").textContent = String(pIdx); // answered so far
+      $("pScore").textContent = String(pCorrect);
+      $("pAnswer").value = "";
+      $("pAnswer").focus();
+      $("pNext").disabled = true;
+      $("pSubmit").disabled = false;
+      pAwaitingNext = false;
+      $("pFeedback").textContent = "";
+      $("pFeedback").className = "feedback";
+    }
+
+    function checkPractise(){
+      if (pIdx >= pMultipliers.length) return;
+      if (pAwaitingNext) return;
+
+      const m = pMultipliers[pIdx];
+      const correct = base * m;
+
+      const raw = $("pAnswer").value;
+      if (raw === "" || raw === null){
+        $("pFeedback").textContent = "Type an answer first 🙂";
+        $("pFeedback").className = "feedback";
+        $("pAnswer").focus();
+        return;
+      }
+
+      const ans = Number(raw);
+      const isRight = ans === correct;
+
+      if (isRight){
+        pCorrect += 1;
+        $("pFeedback").textContent = pickGoodMessage(correct);
+        $("pFeedback").className = "feedback good";
+      } else {
+        $("pFeedback").textContent = `Not quite. ${base} × ${m} = ${correct}.`;
+        $("pFeedback").className = "feedback bad";
+      }
+
+      pAwaitingNext = true;
+      $("pNext").disabled = false;
+      $("pSubmit").disabled = true;
+
+      $("pTotal").textContent = String(pIdx + 1);
+      $("pScore").textContent = String(pCorrect);
+    }
+
+    function skipPractise(){
+      if (pIdx >= pMultipliers.length) return;
+      $("pFeedback").textContent = `Skipped. ${$("pQuestion").textContent.replace(" = ?", "")} = ${base * pMultipliers[pIdx]}.`;
+      $("pFeedback").className = "feedback";
+      pAwaitingNext = true;
+      $("pNext").disabled = false;
+      $("pSubmit").disabled = true;
+      $("pTotal").textContent = String(pIdx + 1);
+    }
+
+    function goNextPractise(){
+      if (!pAwaitingNext) return;
+      pIdx += 1;
+      nextPractiseQuestion();
+    }
+
+    function finishPractise(){
+      stopPractiseTimer();
+      const total = pMultipliers.length;
+      const secs = pStartMs ? (Date.now() - pStartMs) / 1000 : 0;
+      const msg = finishMessage(pCorrect, total);
+      $("pQuestion").textContent = msg;
+      $("pFeedback").textContent = `Final score: ${pCorrect}/${total} in ${secs.toFixed(1)}s.`;
+      $("pFeedback").className = "feedback good";
+
+      $("pNext").disabled = true;
+      $("pSkip").disabled = true;
+      $("pSubmit").disabled = true;
+
+      addHistory({
+        date: nowLocalString(),
+        mode: "Practise",
+        table: base,
+        upto: maxMul,
+        score: `${pCorrect}/${total}`,
+        time: `${secs.toFixed(1)}s`
+      });
+    }
+
+    // ---------- Timed mode ----------
+    function startTimed(){
+      stopTimedTimer();
+      tCorrect = 0;
+      tTried = 0;
+      tLeft = timedSeconds;
+      tActive = true;
+
+      $("tCorrect").textContent = "0";
+      $("tTried").textContent = "0";
+      $("tLeft").textContent = `${tLeft}s`;
+      $("tFeedback").textContent = "Go go go! 🚀";
+      $("tFeedback").className = "feedback";
+
+      $("tAnswer").value = "";
+      $("tSubmit").disabled = false;
+
+      nextTimedQuestion();
+
+      tTimer = setInterval(() => {
+        tLeft -= 1;
+        $("tLeft").textContent = `${tLeft}s`;
+
+        if (tLeft <= 10){
+          $("tTimerPill").classList.add("bad");
+        } else {
+          $("tTimerPill").classList.remove("bad");
+        }
+
+        if (tLeft <= 0){
+          finishTimed();
+        }
+      }, 1000);
+
+      $("tAnswer").focus();
+    }
+
+    function stopTimedTimer(){
+      if (tTimer){ clearInterval(tTimer); tTimer = null; }
+      tActive = false;
+      $("tTimerPill").classList.remove("bad");
+    }
+
+    function nextTimedQuestion(){
+      // Choose a multiplier between 1..maxMul
+      tCurrentMultiplier = 1 + Math.floor(Math.random() * maxMul);
+      $("tQuestion").textContent = `${base} × ${tCurrentMultiplier} = ?`;
+      $("tAnswer").value = "";
+      $("tAnswer").focus();
+    }
+
+    function checkTimed(){
+      if (!tActive) return;
+
+      const raw = $("tAnswer").value;
+      if (raw === "" || raw === null){
+        $("tFeedback").textContent = "Type an answer 🙂";
+        $("tFeedback").className = "feedback";
+        $("tAnswer").focus();
+        return;
+      }
+
+      const ans = Number(raw);
+      const correct = base * tCurrentMultiplier;
+
+      tTried += 1;
+      const isRight = ans === correct;
+      if (isRight){
+        tCorrect += 1;
+        $("tFeedback").textContent = pickGoodMessage(correct);
+        $("tFeedback").className = "feedback good";
+      } else {
+        $("tFeedback").textContent = `Close! It’s ${correct}.`;
+        $("tFeedback").className = "feedback bad";
+      }
+
+      $("tCorrect").textContent = String(tCorrect);
+      $("tTried").textContent = String(tTried);
+
+      nextTimedQuestion();
+    }
+
+    function finishTimed(){
+      stopTimedTimer();
+      $("tSubmit").disabled = true;
+
+      const accuracy = tTried > 0 ? Math.round((tCorrect / tTried) * 100) : 0;
+      $("tQuestion").textContent = `Time’s up! ⏱️`;
+      $("tFeedback").textContent = `You got ${tCorrect} correct out of ${tTried} tries (${accuracy}% accuracy).`;
+      $("tFeedback").className = "feedback good";
+
+      addHistory({
+        date: nowLocalString(),
+        mode: "Timed",
+        table: base,
+        upto: maxMul,
+        score: `${tCorrect}/${tTried}`,
+        time: `${timedSeconds}s`
+      });
+    }
+
+    // ---------- Messages ----------
+    function pickGoodMessage(answer){
+      const msgs = [
+        `Yes! 🎉 (${answer})`,
+        `Awesome! ⭐ (${answer})`,
+        `Nailed it! 😄 (${answer})`,
+        `Great job! 🥳 (${answer})`,
+        `Correct! ✅ (${answer})`
+      ];
+      return msgs[Math.floor(Math.random() * msgs.length)];
+    }
+
+    function finishMessage(correct, total){
+      const pct = total > 0 ? (correct / total) : 0;
+      if (pct >= 0.95) return "Super star! 🌟";
+      if (pct >= 0.80) return "Great work! 🙌";
+      if (pct >= 0.60) return "Nice effort! Keep going 💪";
+      return "Good try — practise makes progress! 🙂";
+    }
+
+    // ---------- History ----------
+    function loadHistory(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return [];
+        return parsed;
+      }catch{
+        return [];
+      }
+    }
+
+    function saveHistory(items){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    }
+
+    function addHistory(item){
+      const items = loadHistory();
+      items.unshift(item);
+      // Keep last 20
+      while (items.length > 20) items.pop();
+      saveHistory(items);
+      renderHistory();
+    }
+
+    function renderHistory(){
+      const body = $("historyBody");
+      const items = loadHistory();
+      body.innerHTML = "";
+
+      if (items.length === 0){
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td colspan="6" class="muted">No attempts yet. Start a quiz!</td>`;
+        body.appendChild(tr);
+        return;
+      }
+
+      for (const it of items){
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${escapeHtml(it.date)}</td>
+          <td>${escapeHtml(it.mode)}</td>
+          <td>${escapeHtml(String(it.table))}×</td>
+          <td>${escapeHtml(String(it.upto))}</td>
+          <td><strong>${escapeHtml(it.score)}</strong></td>
+          <td>${escapeHtml(it.time)}</td>
+        `;
+        body.appendChild(tr);
+      }
+    }
+
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    // ---------- Start / Reset ----------
+    function applySettingsFromUI(){
+      base = Number($("baseNumber").value);
+      maxMul = Number($("maxMultiplier").value);
+      orderMode = $("orderMode").value;
+      timedSeconds = Number($("timedSeconds").value);
+
+      renderLearn();
+      // Update labels in practise/timed areas (question will show when started)
+      $("pMaxQ").textContent = String(maxMul);
+      $("tLeft").textContent = `${timedSeconds}s`;
+    }
+
+    function startCurrentMode(){
+      applySettingsFromUI();
+
+      if (mode === "learn"){
+        renderLearn();
+        return;
+      }
+      if (mode === "practise"){
+        startPractise();
+        return;
+      }
+      if (mode === "timed"){
+        startTimed();
+        return;
+      }
+    }
+
+    function resetAll(){
+      stopPractiseTimer();
+      stopTimedTimer();
+
+      $("pQuestion").textContent = "Press Start";
+      $("pFeedback").textContent = "";
+      $("pAnswer").value = "";
+      $("pNext").disabled = true;
+      $("pSkip").disabled = true;
+      $("pSubmit").disabled = false;
+      $("pScore").textContent = "0";
+      $("pTotal").textContent = "0";
+      $("pIndex").textContent = "0";
+      $("pMaxQ").textContent = "0";
+      $("pTime").textContent = "0.0s";
+
+      $("tQuestion").textContent = "Press Start";
+      $("tFeedback").textContent = "";
+      $("tAnswer").value = "";
+      $("tSubmit").disabled = false;
+      $("tCorrect").textContent = "0";
+      $("tTried").textContent = "0";
+      $("tLeft").textContent = `${timedSeconds}s`;
+
+      renderLearn();
+    }
+
+    // ---------- Event listeners ----------
+    $("tab-learn").addEventListener("click", () => setTab("learn"));
+    $("tab-practise").addEventListener("click", () => setTab("practise"));
+    $("tab-timed").addEventListener("click", () => setTab("timed"));
+
+    $("baseNumber").addEventListener("change", () => { applySettingsFromUI(); });
+    $("maxMultiplier").addEventListener("change", () => { applySettingsFromUI(); });
+    $("orderMode").addEventListener("change", () => { applySettingsFromUI(); });
+    $("timedSeconds").addEventListener("change", () => { applySettingsFromUI(); });
+
+    $("startBtn").addEventListener("click", startCurrentMode);
+    $("resetBtn").addEventListener("click", resetAll);
+
+    $("clearHistoryBtn").addEventListener("click", () => {
+      localStorage.removeItem(STORAGE_KEY);
+      renderHistory();
+    });
+
+    $("pSubmit").addEventListener("click", checkPractise);
+    $("pNext").addEventListener("click", goNextPractise);
+    $("pSkip").addEventListener("click", () => { skipPractise(); });
+
+    $("tSubmit").addEventListener("click", checkTimed);
+
+    $("pAnswer").addEventListener("keydown", (e) => {
+      if (e.key === "Enter"){
+        if (!$("pSubmit").disabled) checkPractise();
+        else if (!$("pNext").disabled) goNextPractise();
+      }
+    });
+
+    $("tAnswer").addEventListener("keydown", (e) => {
+      if (e.key === "Enter"){
+        checkTimed();
+      }
+    });
+
+    // ---------- Init ----------
+    (function init(){
+      fillSelects();
+      applySettingsFromUI();
+      renderLearn();
+      renderHistory();
+      setTab("learn");
+    })();
+  </script>
+</body>
+</html>
