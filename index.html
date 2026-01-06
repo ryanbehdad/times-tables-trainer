@@ -3,31 +3,36 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Times Table Speed Quiz (Minecraft Night)</title>
+  <title>Times Table Quiz (Minecraft Night)</title>
   <style>
     :root{
       --bg0:#05070f;
       --bg1:#0a0f22;
       --bg2:#0b1a2a;
+
       --panel: rgba(10, 14, 26, .72);
+      --panel2: rgba(7, 10, 20, .62);
       --stroke: rgba(255,255,255,.14);
+
       --text:#f3f6ff;
-      --muted: rgba(243,246,255,.75);
+      --muted: rgba(243,246,255,.72);
 
       --good:#3bff8b;
       --bad:#ff5c7a;
       --warn:#ffd166;
 
-      --accent:#7c5cff;
-      --accent2:#2de2e6;
-
       --shadow: 0 18px 45px rgba(0,0,0,.55);
       --radius: 16px;
+
+      --pixelCut: polygon(
+        0 10px, 10px 10px, 10px 0, calc(100% - 10px) 0, calc(100% - 10px) 10px, 100% 10px,
+        100% calc(100% - 10px), calc(100% - 10px) calc(100% - 10px), calc(100% - 10px) 100%,
+        10px 100%, 10px calc(100% - 10px), 0 calc(100% - 10px)
+      );
     }
 
     *{ box-sizing:border-box; }
 
-    /* Dark night Minecraft-ish background: stars + blocky pixel grid */
     body{
       margin:0;
       min-height:100vh;
@@ -45,27 +50,18 @@
         radial-gradient(circle at 78% 85%, rgba(255,255,255,.55) 0 1px, transparent 2px),
         radial-gradient(circle at 90% 15%, rgba(255,255,255,.45) 0 1px, transparent 2px),
         /* subtle “nebula” */
-        radial-gradient(900px 650px at 20% 10%, rgba(124,92,255,.20), transparent 60%),
-        radial-gradient(900px 650px at 85% 25%, rgba(45,226,230,.12), transparent 62%),
+        radial-gradient(900px 650px at 20% 10%, rgba(124,92,255,.18), transparent 60%),
+        radial-gradient(900px 650px at 85% 25%, rgba(45,226,230,.10), transparent 62%),
         radial-gradient(900px 650px at 50% 95%, rgba(59,255,139,.08), transparent 62%),
         /* blocky grid */
         repeating-linear-gradient(0deg, rgba(255,255,255,.03), rgba(255,255,255,.03) 2px, transparent 2px, transparent 22px),
         repeating-linear-gradient(90deg, rgba(255,255,255,.02), rgba(255,255,255,.02) 2px, transparent 2px, transparent 22px),
         linear-gradient(180deg, var(--bg0), var(--bg1) 55%, var(--bg2));
-      background-size:
-        420px 420px,
-        520px 520px,
-        680px 680px,
-        760px 760px,
-        900px 900px,
-        auto, auto, auto,
-        auto, auto,
-        auto;
       background-blend-mode: screen, screen, screen, screen, screen, normal, normal, normal, normal, normal, normal;
     }
 
     .app{
-      width:min(900px, 100%);
+      width:min(1100px, 100%);
       display:grid;
       gap:14px;
     }
@@ -87,13 +83,8 @@
       background: rgba(7, 10, 20, .60);
       box-shadow: var(--shadow);
       backdrop-filter: blur(8px);
-      /* pixel-ish corners */
       border-radius: 0;
-      clip-path: polygon(
-        0 8px, 8px 8px, 8px 0, calc(100% - 8px) 0, calc(100% - 8px) 8px, 100% 8px,
-        100% calc(100% - 8px), calc(100% - 8px) calc(100% - 8px), calc(100% - 8px) 100%,
-        8px 100%, 8px calc(100% - 8px), 0 calc(100% - 8px)
-      );
+      clip-path: var(--pixelCut);
     }
 
     select{
@@ -121,12 +112,12 @@
     }
 
     button.primary{
-      background: linear-gradient(135deg, rgba(124,92,255,.70), rgba(45,226,230,.35));
+      background: linear-gradient(135deg, rgba(124,92,255,.65), rgba(45,226,230,.30));
       border-color: rgba(124,92,255,.55);
     }
     button.good{
-      background: rgba(59,255,139,.15);
-      border-color: rgba(59,255,139,.35);
+      background: rgba(59,255,139,.14);
+      border-color: rgba(59,255,139,.30);
     }
     button.danger{
       background: rgba(255,92,122,.14);
@@ -138,27 +129,31 @@
       box-shadow:none;
     }
 
+    .grid{
+      display:grid;
+      grid-template-columns: 320px 1fr;
+      gap:14px;
+      align-items:start;
+    }
+    @media (max-width: 980px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
     .card{
       border:2px solid rgba(255,255,255,.10);
       background: var(--panel);
       box-shadow: var(--shadow);
-      padding:16px;
+      padding:14px;
       border-radius:0;
       position:relative;
       overflow:hidden;
-      clip-path: polygon(
-        0 10px, 10px 10px, 10px 0, calc(100% - 10px) 0, calc(100% - 10px) 10px, 100% 10px,
-        100% calc(100% - 10px), calc(100% - 10px) calc(100% - 10px), calc(100% - 10px) 100%,
-        10px 100%, 10px calc(100% - 10px), 0 calc(100% - 10px)
-      );
+      clip-path: var(--pixelCut);
     }
-
-    /* Subtle block texture */
     .card::before{
       content:"";
       position:absolute;
       inset:0;
-      opacity:.35;
+      opacity:.28;
       pointer-events:none;
       background:
         repeating-linear-gradient(0deg, rgba(255,255,255,.04), rgba(255,255,255,.04) 1px, transparent 1px, transparent 18px),
@@ -166,6 +161,98 @@
       mix-blend-mode: overlay;
     }
 
+    /* Left history pane */
+    .historyHead{
+      position:relative;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
+      z-index:1;
+    }
+    .historyTitle{
+      font-weight:1000;
+      letter-spacing:.6px;
+      text-transform: uppercase;
+      font-size:.92rem;
+      color: rgba(243,246,255,.92);
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .historyMeta{
+      color: var(--muted);
+      font-weight:900;
+      font-size:.85rem;
+    }
+    .historyList{
+      position:relative;
+      z-index:1;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      max-height: 520px;
+      overflow:auto;
+      padding-right: 6px;
+    }
+    .historyList::-webkit-scrollbar{ width:10px; }
+    .historyList::-webkit-scrollbar-thumb{
+      background: rgba(255,255,255,.12);
+      border:2px solid rgba(0,0,0,.25);
+    }
+
+    .rowItem{
+      display:grid;
+      grid-template-columns: 22px 1fr;
+      gap:10px;
+      align-items:start;
+      padding:10px 10px;
+      background: var(--panel2);
+      border:1px solid rgba(255,255,255,.10);
+      box-shadow: 0 10px 18px rgba(0,0,0,.35);
+    }
+    .badge{
+      width:22px; height:22px;
+      display:grid;
+      place-items:center;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      font-weight:1000;
+    }
+    .badge.good{ border-color: rgba(59,255,139,.35); }
+    .badge.bad{ border-color: rgba(255,92,122,.40); }
+    .badge.neutral{ border-color: rgba(255,209,102,.35); }
+
+    .rowMain{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+    .eq{
+      font-weight:1000;
+      letter-spacing:.3px;
+      line-height:1.15;
+    }
+    .eq .muted{ color: var(--muted); font-weight:900; }
+    .subline{
+      color: var(--muted);
+      font-weight:900;
+      font-size:.85rem;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .tag{
+      padding:2px 8px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+    }
+    .tag.good{ border-color: rgba(59,255,139,.32); }
+    .tag.bad{ border-color: rgba(255,92,122,.32); }
+    .tag.neutral{ border-color: rgba(255,209,102,.32); }
+
+    /* Main game pane */
     .status{
       position:relative;
       display:flex;
@@ -174,8 +261,8 @@
       gap:10px;
       flex-wrap:wrap;
       margin-bottom:12px;
+      z-index:1;
     }
-
     .stat{
       position:relative;
       display:flex;
@@ -186,17 +273,19 @@
       background: rgba(7, 10, 20, .55);
       font-weight:1000;
       border-radius:0;
+      z-index:1;
     }
     .stat small{ color: var(--muted); font-weight:900; }
 
     .timer{
       position:relative;
-      width: 260px;
+      width: 280px;
       max-width: 100%;
       height: 14px;
       border:2px solid rgba(255,255,255,.12);
       background: rgba(7, 10, 20, .55);
       overflow:hidden;
+      z-index:1;
     }
     .bar{
       height:100%;
@@ -216,24 +305,22 @@
       place-items:center;
       text-align:center;
       padding: 10px 6px 6px;
+      z-index:1;
     }
-
     .big{
-      font-size: clamp(3.1rem, 7vw, 5.4rem);
+      font-size: clamp(3.1rem, 7vw, 5.6rem);
       font-weight: 1000;
       letter-spacing: 1px;
       line-height: 1.05;
       margin: 6px 0 6px;
       text-shadow: 0 14px 26px rgba(0,0,0,.55);
     }
-
     .hint{
       margin: 0 0 12px;
       color: var(--muted);
       font-weight: 900;
       max-width: 60ch;
     }
-
     .answerRow{
       display:flex;
       justify-content:center;
@@ -242,9 +329,8 @@
       padding: 8px 0 6px;
       width:100%;
     }
-
     input{
-      width: min(420px, 100%);
+      width: min(440px, 100%);
       padding: 14px 16px;
       border:2px solid rgba(255,255,255,.14);
       background: rgba(10, 15, 35, .70);
@@ -305,7 +391,7 @@
 </head>
 
 <body>
-  <div class="app" role="application" aria-label="Times Table Speed Quiz">
+  <div class="app" role="application" aria-label="Times Table Quiz">
     <div class="top">
       <div class="pill" aria-label="Choose table">
         <span aria-hidden="true">⛏️</span>
@@ -316,53 +402,76 @@
 
       <div class="pill" aria-label="Controls">
         <button id="startBtn" class="primary">Start</button>
-        <button id="restartBtn" class="secondary" type="button">Restart</button>
+        <button id="restartBtn" type="button">Restart</button>
         <button id="pauseBtn" type="button" disabled>Pause</button>
         <button id="manualBtn" type="button">Manual: Off</button>
       </div>
     </div>
 
-    <div class="card" id="gameCard">
-      <div class="status">
-        <div class="stat"><span aria-hidden="true">✅</span><span>Correct</span><small id="correct">0</small></div>
-        <div class="stat"><span aria-hidden="true">🧠</span><span>Done</span><small id="done">0/12</small></div>
-        <div class="stat"><span aria-hidden="true">⏱️</span><span>Time</span><small id="timeLeft">30s</small></div>
+    <div class="grid">
+      <!-- LEFT: History Pane -->
+      <div class="card" aria-label="Answer history">
+        <div class="historyHead">
+          <div class="historyTitle">📜 History</div>
+          <div class="historyMeta" id="histMeta">0 items</div>
+          <button id="clearHistBtn" class="danger" type="button" title="Clear history">Clear</button>
+        </div>
 
-        <div class="timer" aria-label="Time bar">
-          <div class="bar" id="bar"></div>
+        <div class="historyList" id="historyList" aria-live="polite">
+          <div class="rowItem">
+            <div class="badge neutral">•</div>
+            <div class="rowMain">
+              <div class="eq">Press <span class="muted">Start</span> to begin.</div>
+              <div class="subline">
+                <span class="tag neutral">You’ll see each question + your answer here</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="question">
-        <div class="big" id="questionText">Pick a table and press Start</div>
-        <p class="hint" id="hint">
-          You have <strong>30 seconds</strong> per question. Type the answer and press <strong>Enter</strong>.
-          After each answer, it shows the correct result and waits up to <strong>15 seconds</strong> (or press <strong>Next</strong>).
-        </p>
+      <!-- RIGHT: Game Pane -->
+      <div class="card" id="gameCard">
+        <div class="status">
+          <div class="stat"><span aria-hidden="true">✅</span><span>Correct</span><small id="correct">0</small></div>
+          <div class="stat"><span aria-hidden="true">🧠</span><span>Done</span><small id="done">0/12</small></div>
+          <div class="stat"><span aria-hidden="true">⏱️</span><span>Time</span><small id="timeLeft">30s</small></div>
 
-        <div class="answerRow">
-          <label class="sr-only" for="answer">Answer</label>
-          <input id="answer" type="number" inputmode="numeric" autocomplete="off" placeholder="Type answer…" disabled />
+          <div class="timer" aria-label="Time bar">
+            <div class="bar" id="bar"></div>
+          </div>
         </div>
 
-        <div class="feedback" id="feedback" aria-live="polite"></div>
+        <div class="question">
+          <div class="big" id="questionText">Pick a table and press Start</div>
+          <p class="hint" id="hint">
+            <strong>Enter</strong> to submit. After each question, it shows the correct answer and waits up to <strong>15 seconds</strong> (or press <strong>Next</strong>).
+            Use <strong>Manual</strong> to turn the timer off.
+          </p>
 
-        <div class="controlsRow">
-          <button id="nextBtn" class="good" type="button" disabled>Next</button>
+          <div class="answerRow">
+            <label class="sr-only" for="answer">Answer</label>
+            <input id="answer" type="number" inputmode="numeric" autocomplete="off" placeholder="Type answer…" disabled />
+          </div>
+
+          <div class="feedback" id="feedback" aria-live="polite"></div>
+
+          <div class="controlsRow">
+            <button id="nextBtn" class="good" type="button" disabled>Next</button>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
   <script>
-    // --- Minecraft Night: fast quiz, minimal UI, answer reveal, pause + manual mode ---
-
     const baseSel = document.getElementById("baseSel");
     const startBtn = document.getElementById("startBtn");
     const restartBtn = document.getElementById("restartBtn");
     const pauseBtn = document.getElementById("pauseBtn");
     const manualBtn = document.getElementById("manualBtn");
     const nextBtn = document.getElementById("nextBtn");
+    const clearHistBtn = document.getElementById("clearHistBtn");
 
     const questionText = document.getElementById("questionText");
     const answerInput = document.getElementById("answer");
@@ -373,9 +482,13 @@
     const bar = document.getElementById("bar");
     const gameCard = document.getElementById("gameCard");
 
+    const historyList = document.getElementById("historyList");
+    const histMeta = document.getElementById("histMeta");
+
     const PER_QUESTION_SECONDS = 30;
     const REVEAL_WAIT_MS = 15000;
     const MULTIPLIERS = Array.from({length: 12}, (_, i) => i + 1);
+    const MAX_HISTORY_ITEMS = 40; // keeps it light
 
     let base = 4;
     let order = [];
@@ -385,16 +498,19 @@
     let running = false;
 
     // Timer state
-    let manualMode = false;   // no timer + no pause needed
+    let manualMode = false;
     let paused = false;
-    let tickTimer = null;     // 250ms label + timeout check
-    let smoothTimer = null;   // bar animation
+    let tickTimer = null;
+    let smoothTimer = null;
     let qEndMs = 0;
     let remainingMs = PER_QUESTION_SECONDS * 1000;
 
     // Reveal/advance state
     let awaitingNext = false;
     let autoNextTimeout = null;
+
+    // In-memory history of answered questions (for this session)
+    let history = [];
 
     function fillTables(){
       baseSel.innerHTML = "";
@@ -419,7 +535,6 @@
       if (tickTimer){ clearInterval(tickTimer); tickTimer = null; }
       if (smoothTimer){ clearInterval(smoothTimer); smoothTimer = null; }
     }
-
     function stopAutoNext(){
       if (autoNextTimeout){ clearTimeout(autoNextTimeout); autoNextTimeout = null; }
     }
@@ -444,7 +559,6 @@
         bar.style.opacity = "0.35";
         return;
       }
-
       bar.style.opacity = "1";
       const sec = Math.ceil(Math.max(0, ms) / 1000);
       timeLeftEl.textContent = paused ? `Paused (${sec}s)` : `${sec}s`;
@@ -468,28 +582,22 @@
       pauseBtn.textContent = "Pause";
       pauseBtn.disabled = manualMode;
 
-      if (manualMode){
-        remainingMs = PER_QUESTION_SECONDS * 1000;
-        setTimeUI(remainingMs);
-        return;
-      }
-
       remainingMs = PER_QUESTION_SECONDS * 1000;
-      qEndMs = Date.now() + remainingMs;
       setTimeUI(remainingMs);
 
-      // Label & timeout checks (4x per second for snappy pause feel)
+      if (manualMode) return;
+
+      qEndMs = Date.now() + remainingMs;
+
       tickTimer = setInterval(() => {
         if (paused) return;
         remainingMs = qEndMs - Date.now();
         setTimeUI(remainingMs);
-
         if (remainingMs <= 0){
           handleTimeout();
         }
       }, 250);
 
-      // Smooth bar updates
       smoothTimer = setInterval(() => {
         if (paused) return;
         remainingMs = qEndMs - Date.now();
@@ -511,18 +619,109 @@
       }, REVEAL_WAIT_MS);
     }
 
-    function revealThenWait(kind, prefix){
-      // Always show the correct equation and answer
+    function badgeFor(result){
+      if (result === "correct") return { cls: "good", icon: "✓" };
+      if (result === "wrong") return { cls: "bad", icon: "×" };
+      return { cls: "neutral", icon: "•" };
+    }
+
+    function renderHistory(){
+      histMeta.textContent = `${history.length} item${history.length === 1 ? "" : "s"}`;
+      historyList.innerHTML = "";
+
+      if (history.length === 0){
+        historyList.innerHTML = `
+          <div class="rowItem">
+            <div class="badge neutral">•</div>
+            <div class="rowMain">
+              <div class="eq">No answers yet.</div>
+              <div class="subline"><span class="tag neutral">Start a round and your trail appears here</span></div>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      // newest on top
+      for (const item of history){
+        const b = badgeFor(item.result);
+        const eq = `${item.base}×${item.multiplier}=${item.correctAnswer}`;
+        const your = (item.yourAnswer === null) ? "—" : String(item.yourAnswer);
+        const resultTag = item.result === "correct" ? "Correct" : (item.result === "wrong" ? "Wrong" : "Time");
+
+        const tagCls = item.result === "correct" ? "good" : (item.result === "wrong" ? "bad" : "neutral");
+
+        const row = document.createElement("div");
+        row.className = "rowItem";
+        row.innerHTML = `
+          <div class="badge ${b.cls}">${b.icon}</div>
+          <div class="rowMain">
+            <div class="eq">${eq} <span class="muted">• you:</span> ${escapeHtml(your)}</div>
+            <div class="subline">
+              <span class="tag ${tagCls}">${resultTag}</span>
+              <span class="tag neutral">${escapeHtml(item.note)}</span>
+            </div>
+          </div>
+        `;
+        historyList.appendChild(row);
+      }
+    }
+
+    function addHistoryItem({ result, base, multiplier, yourAnswer, correctAnswer, note }){
+      history.unshift({
+        result,
+        base,
+        multiplier,
+        yourAnswer,
+        correctAnswer,
+        note
+      });
+
+      if (history.length > MAX_HISTORY_ITEMS){
+        history = history.slice(0, MAX_HISTORY_ITEMS);
+      }
+
+      renderHistory();
+    }
+
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function revealThenWait(kind, prefix, resultKind, yourAnswer){
       stopTimers();
       stopAutoNext();
 
       const m = currentMultiplier();
       const ans = currentAnswer();
-      const equation = `${base} × ${m} = ${ans}`;
+      const eq = `${base} × ${m} = ${ans}`;
 
-      setFeedback(kind, `${prefix}  ${equation}`);
+      setFeedback(kind, `${prefix}  ${eq}`);
       setAwaitingNext(true);
       scheduleAutoNext();
+
+      // History entry
+      const note =
+        resultKind === "correct" ? "Nice!" :
+        resultKind === "wrong" ? "Keep going" :
+        "Too slow";
+
+      addHistoryItem({
+        result: resultKind,
+        base,
+        multiplier: m,
+        yourAnswer,
+        correctAnswer: ans,
+        note
+      });
+
+      // Auto-scroll history list to top (newest already at top, but keeps view fresh)
+      historyList.scrollTop = 0;
     }
 
     function nextQuestion(){
@@ -536,8 +735,10 @@
         return;
       }
 
+      setFeedback("", "");
       feedback.textContent = "";
       feedback.className = "feedback";
+
       answerInput.value = "";
       setAwaitingNext(false);
 
@@ -557,12 +758,13 @@
       idx = 0;
       correct = 0;
 
+      // clear session history for each start (you can change this if you want it to persist)
+      history = [];
+      renderHistory();
+
       correctEl.textContent = "0";
       doneEl.textContent = "0/12";
       answerInput.value = "";
-      setFeedback("", "");
-      feedback.textContent = "";
-      feedback.className = "feedback";
 
       pauseBtn.disabled = manualMode;
       setAwaitingNext(false);
@@ -596,6 +798,9 @@
       pauseBtn.disabled = true;
 
       setTimeUI(PER_QUESTION_SECONDS * 1000);
+
+      history = [];
+      renderHistory();
     }
 
     function submitAnswer(){
@@ -606,16 +811,13 @@
 
       const guess = Number(raw);
       const ans = currentAnswer();
-
-      // Mark and advance idx now; reveal uses current question values, so reveal before idx++?
-      // We need current multiplier for message, so reveal first then increment after.
       const isRight = guess === ans;
 
       if (isRight){
         correct += 1;
-        revealThenWait("goodText", "✅ Correct!");
+        revealThenWait("goodText", "✅ Correct!", "correct", guess);
       } else {
-        revealThenWait("badText", "❌ Not quite.");
+        revealThenWait("badText", "❌ Not quite.", "wrong", guess);
       }
 
       idx += 1;
@@ -624,8 +826,7 @@
 
     function handleTimeout(){
       if (!running || awaitingNext) return;
-
-      revealThenWait("badText", "⏳ Time!");
+      revealThenWait("badText", "⏳ Time!", "time", null);
       idx += 1;
       updateProgress();
     }
@@ -642,16 +843,14 @@
       paused = !paused;
       pauseBtn.textContent = paused ? "Resume" : "Pause";
 
-      if (!manualMode){
-        if (paused){
-          // freeze remaining
-          remainingMs = Math.max(0, qEndMs - Date.now());
-          setTimeUI(remainingMs);
-        } else {
-          // resume from remaining
-          qEndMs = Date.now() + Math.max(0, remainingMs);
-          setTimeUI(Math.max(0, remainingMs));
-        }
+      if (manualMode) return;
+
+      if (paused){
+        remainingMs = Math.max(0, qEndMs - Date.now());
+        setTimeUI(remainingMs);
+      } else {
+        qEndMs = Date.now() + Math.max(0, remainingMs);
+        setTimeUI(Math.max(0, remainingMs));
       }
     }
 
@@ -659,14 +858,12 @@
       manualMode = !manualMode;
       manualBtn.textContent = manualMode ? "Manual: On" : "Manual: Off";
 
-      // If running, immediately apply behaviour:
       if (running && !awaitingNext){
-        // stop any timer and switch UI
         stopTimers();
         paused = false;
         pauseBtn.textContent = "Pause";
         pauseBtn.disabled = manualMode;
-        beginQuestionTimer(); // will no-op timers in manual mode and update UI
+        beginQuestionTimer(); // updates UI, restarts/turns off timers
       } else {
         pauseBtn.disabled = true;
         setTimeUI(PER_QUESTION_SECONDS * 1000);
@@ -697,7 +894,7 @@
       setTimeUI(0);
     }
 
-    // --- User actions ---
+    // --- Events ---
     baseSel.addEventListener("change", () => {
       if (!running) resetIdle();
     });
@@ -708,6 +905,11 @@
     manualBtn.addEventListener("click", toggleManual);
     nextBtn.addEventListener("click", goNext);
 
+    clearHistBtn.addEventListener("click", () => {
+      history = [];
+      renderHistory();
+    });
+
     answerInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter"){
         if (awaitingNext) goNext();
@@ -715,14 +917,10 @@
       }
     });
 
-    // Handy: press Space anywhere to go Next when revealing
+    // Space = Next when revealing (nice on desktop)
     document.addEventListener("keydown", (e) => {
       if (e.key === " " && awaitingNext){
         e.preventDefault();
-        goNext();
-      }
-      // Also allow Enter anywhere to go Next while revealing
-      if (e.key === "Enter" && awaitingNext && document.activeElement !== answerInput){
         goNext();
       }
     });
